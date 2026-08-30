@@ -1,0 +1,39 @@
+# Java / Eclipse build output
+*.class
+bin/
+build/
+target/
+out/
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+.metadata/
+*.launch
+
+# Java EE / web app generated folders
+src/main/webapp/WEB-INF/classes/
+src/main/webapp/WEB-INF/lib/
+**/WEB-INF/classes/
+**/WEB-INF/lib/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local environment / DB files
+*.sqlite
+*.db
+.env
+.env.*

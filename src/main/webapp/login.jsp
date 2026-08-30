@@ -1,20 +1,20 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
-    // Prevent caching on login page to ensure clean logout
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
 
-    // Check for remember me cookie
     String savedEmail = "";
     Cookie[] cookies = request.getCookies();
     if (cookies != null) {
         for (Cookie c : cookies) {
             if ("remember_user".equals(c.getName())) {
-                savedEmail = c.getValue();
+                savedEmail = c.getValue() == null ? "" : c.getValue();
             }
         }
     }
+
+    String emailValue = request.getParameter("email") != null ? request.getParameter("email") : savedEmail;
 %>
 <!DOCTYPE html>
 <html>
@@ -38,27 +38,39 @@
                         <p class="mb-0 small text-white-50">Appointment & Patient Management System</p>
                     </div>
                     <div class="card-body p-4">
-                        <% 
+                        <%
                             String error = request.getParameter("error");
                             if ("invalid".equals(error)) {
                         %>
                             <div class="alert alert-danger" role="alert">
                                 Invalid email or password. Please try again.
                             </div>
-                        <% 
+                        <%
                             } else if ("empty".equals(error)) {
                         %>
                             <div class="alert alert-warning" role="alert">
                                 Email and password cannot be empty.
                             </div>
-                        <% 
+                        <%
+                            } else if ("session_expired".equals(error)) {
+                        %>
+                            <div class="alert alert-warning" role="alert">
+                                Your session has expired. Please log in again.
+                            </div>
+                        <%
+                            } else if ("unauthorized".equals(error)) {
+                        %>
+                            <div class="alert alert-danger" role="alert">
+                                You do not have permission to access that page.
+                            </div>
+                        <%
                             }
                         %>
-                        
+
                         <form action="LoginServlet" method="post" id="loginForm" novalidate>
                             <div class="mb-3">
                                 <label for="email" class="form-label text-secondary fw-bold">Email Address</label>
-                                <input type="email" class="form-control form-control-lg" id="email" name="email" value="<%= savedEmail %>" required placeholder="Enter your email">
+                                <input type="email" class="form-control form-control-lg" id="email" name="email" value="<%= emailValue %>" required placeholder="Enter your email">
                                 <div class="invalid-feedback">Please enter a valid email address.</div>
                             </div>
                             <div class="mb-3">
@@ -66,12 +78,12 @@
                                 <input type="password" class="form-control form-control-lg" id="password" name="password" required placeholder="Enter your password">
                                 <div class="invalid-feedback">Please enter your password.</div>
                             </div>
-                            
+
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="remember" name="remember" <%= !savedEmail.isEmpty() ? "checked" : "" %>>
                                 <label class="form-check-label text-secondary" for="remember">Remember me</label>
                             </div>
-                            
+
                             <div class="d-grid gap-2 mt-4">
                                 <button type="submit" class="btn btn-teal btn-lg fw-bold">Secure Login</button>
                             </div>
@@ -86,7 +98,6 @@
     </div>
 
     <script>
-        // Client-side bootstrap validation
         (() => {
             'use strict';
             const forms = document.querySelectorAll('#loginForm');

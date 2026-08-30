@@ -11,25 +11,29 @@ import java.util.List;
 public class UserDAO {
 
     public User getUserByEmail(String email) {
-        String query = "SELECT * FROM users WHERE email = ?";
-        
+        if (email == null || email.trim().isEmpty()) {
+            return null;
+        }
+
+        String query = "SELECT * FROM users WHERE LOWER(email) = LOWER(?)";
+
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            
-            preparedStatement.setString(1, email);
-            
-            ResultSet rs = preparedStatement.executeQuery();
-            
-            if (rs.next()) {
-                User user = new User();
-                user.setId(rs.getInt("id"));
-                user.setName(rs.getString("name"));
-                user.setEmail(rs.getString("email"));
-                user.setPasswordHash(rs.getString("password_hash"));
-                user.setEmployeeNumber(rs.getString("employee_number"));
-                user.setPhoneNumber(rs.getString("phone_number"));
-                user.setRole(rs.getString("role"));
-                return user;
+
+            preparedStatement.setString(1, email.trim());
+
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("id"));
+                    user.setName(rs.getString("name"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPasswordHash(rs.getString("password_hash"));
+                    user.setEmployeeNumber(rs.getString("employee_number"));
+                    user.setPhoneNumber(rs.getString("phone_number"));
+                    user.setRole(rs.getString("role"));
+                    return user;
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
