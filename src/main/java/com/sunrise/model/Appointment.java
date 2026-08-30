@@ -8,7 +8,8 @@ public class Appointment {
     private String dentistName;
     private int treatmentId;
     private Timestamp appointmentDate;
-    
+    private String status = "SCHEDULED";
+
     // Virtual fields to simplify display
     private String patientName;
     private String patientContact;
@@ -19,6 +20,9 @@ public class Appointment {
 
     public String getAppointmentNo() { return appointmentNo; }
     public void setAppointmentNo(String appointmentNo) { this.appointmentNo = appointmentNo; }
+
+    public String getAppointmentNumber() { return appointmentNo; }
+    public void setAppointmentNumber(String appointmentNo) { this.appointmentNo = appointmentNo; }
 
     public int getPatientId() { return patientId; }
     public void setPatientId(int patientId) { this.patientId = patientId; }
@@ -31,6 +35,9 @@ public class Appointment {
 
     public Timestamp getAppointmentDate() { return appointmentDate; }
     public void setAppointmentDate(Timestamp appointmentDate) { this.appointmentDate = appointmentDate; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public String getPatientName() { return patientName; }
     public void setPatientName(String patientName) { this.patientName = patientName; }
