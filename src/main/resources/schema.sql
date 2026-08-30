@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS appointments (
 
 CREATE TABLE IF NOT EXISTS bills (
     bill_no SERIAL PRIMARY KEY,
-    appointment_no VARCHAR(30) REFERENCES appointments(appointment_no) ON DELETE CASCADE,
+    appointment_no VARCHAR(30) NOT NULL UNIQUE REFERENCES appointments(appointment_no) ON DELETE CASCADE,
     consultation_fee NUMERIC(10, 2) NOT NULL,
     treatment_cost NUMERIC(10, 2) NOT NULL,
     total_bill NUMERIC(10, 2) NOT NULL,
@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS bills (
 
 CREATE INDEX IF NOT EXISTS idx_appointments_dentist_datetime
     ON appointments (dentist_name, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_appointment_no_unique
+    ON bills (appointment_no);
 
 CREATE INDEX IF NOT EXISTS idx_appointments_status
     ON appointments (status);

@@ -2,30 +2,49 @@ package com.sunrise.service;
 
 import com.sunrise.dao.BillDAO;
 import com.sunrise.dao.TreatmentDAO;
+import com.sunrise.model.Appointment;
 import com.sunrise.model.Bill;
 import com.sunrise.model.Treatment;
 import java.sql.Timestamp;
 
 public class BillingService {
-    private BillDAO billDAO = new BillDAO();
-    private TreatmentDAO treatmentDAO = new TreatmentDAO();
-    
+    private final BillDAO billDAO = new BillDAO();
+    private final TreatmentDAO treatmentDAO = new TreatmentDAO();
+    private final AppointmentService appointmentService = new AppointmentService();
+
     private static final double CONSULTATION_FEE = 50.0;
 
     public Bill generateAndSaveBill(String appointmentNo, int treatmentId) {
-        // Fetch treatment to get cost
-        Treatment t = treatmentDAO.getTreatmentById(treatmentId);
-        double treatmentCost = (t != null) ? t.getCost() : 0.0;
-        double total = CONSULTATION_FEE + treatmentCost;
+        if (appointmentNo == null || appointmentNo.trim().isEmpty()) {
+            return null;
+        }
 
-        // Check if bill already exists
-        Bill existing = billDAO.getBillByAppointmentNo(appointmentNo);
+        String cleanAppointmentNo = appointmentNo.trim();
+        Appointment appointment = appointmentService.getAppointmentDetails(cleanAppointmentNo);
+        if (appointment == null) {
+            return null;
+        }
+
+        if ("CANCELLED".equalsIgnoreCase(appointment.getStatus())) {
+            return null;
+        }
+
+        int appointmentTreatmentId = appointment.getTreatmentId() > 0 ? appointment.getTreatmentId() : treatmentId;
+        Treatment treatment = treatmentDAO.getTreatmentById(appointmentTreatmentId);
+        if (treatment == null) {
+            return null;
+        }
+
+        Bill existing = billDAO.getBillByAppointmentNo(cleanAppointmentNo);
         if (existing != null) {
             return existing;
         }
 
+        double treatmentCost = treatment.getCost();
+        double total = CONSULTATION_FEE + treatmentCost;
+
         Bill bill = new Bill();
-        bill.setAppointmentNo(appointmentNo);
+        bill.setAppointmentNo(cleanAppointmentNo);
         bill.setConsultationFee(CONSULTATION_FEE);
         bill.setTreatmentCost(treatmentCost);
         bill.setTotalBill(total);
@@ -33,12 +52,15 @@ public class BillingService {
 
         boolean success = billDAO.generateBill(bill);
         if (success) {
-            return billDAO.getBillByAppointmentNo(appointmentNo);
+            return billDAO.getBillByAppointmentNo(cleanAppointmentNo);
         }
         return null;
     }
 
     public Bill getBill(String appointmentNo) {
-        return billDAO.getBillByAppointmentNo(appointmentNo);
+        if (appointmentNo == null || appointmentNo.trim().isEmpty()) {
+            return null;
+        }
+        return billDAO.getBillByAppointmentNo(appointmentNo.trim());
     }
 }
