@@ -1,0 +1,91 @@
+package com.sunrise.dao;
+
+import com.sunrise.model.Patient;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PatientDAO {
+
+    public int registerPatient(Patient patient) {
+        String query = "INSERT INTO patients (name, address, contact_number) VALUES (?, ?, ?) RETURNING patient_id";
+        
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setString(1, patient.getName());
+            preparedStatement.setString(2, patient.getAddress());
+            preparedStatement.setString(3, patient.getContactNumber());
+            
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("patient_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public Patient getPatientById(int patientId) {
+        String query = "SELECT * FROM patients WHERE patient_id = ?";
+        
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setInt(1, patientId);
+            ResultSet rs = preparedStatement.executeQuery();
+            
+            if (rs.next()) {
+                Patient p = new Patient();
+                p.setPatientId(rs.getInt("patient_id"));
+                p.setName(rs.getString("name"));
+                p.setAddress(rs.getString("address"));
+                p.setContactNumber(rs.getString("contact_number"));
+                return p;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Patient getPatientByNameAndContact(String name, String contact) {
+        String query = "SELECT * FROM patients WHERE name = ? AND contact_number = ?";
+        
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, contact);
+            ResultSet rs = preparedStatement.executeQuery();
+            
+            if (rs.next()) {
+                Patient p = new Patient();
+                p.setPatientId(rs.getInt("patient_id"));
+                p.setName(rs.getString("name"));
+                p.setAddress(rs.getString("address"));
+                p.setContactNumber(rs.getString("contact_number"));
+                return p;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public int getTotalPatientsCount() {
+        String query = "SELECT COUNT(*) AS count FROM patients";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query);
+             ResultSet rs = preparedStatement.executeQuery()) {
+            
+            if (rs.next()) {
+                return rs.getInt("count");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+}
