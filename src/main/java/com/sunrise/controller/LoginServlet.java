@@ -3,6 +3,8 @@ package com.sunrise.controller;
 import com.sunrise.model.User;
 import com.sunrise.service.AuthenticationService;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.Cookie;
@@ -13,39 +15,48 @@ import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/LoginServlet")
 public class LoginServlet extends HttpServlet {
-    private AuthenticationService authService = new AuthenticationService();
+    private final AuthenticationService authService = new AuthenticationService();
 
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("user") != null) {
+            response.sendRedirect("DashboardServlet");
+            return;
+        }
+
+        response.sendRedirect("login.jsp");
+    }
+
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("email");
-        String passwordRaw = request.getParameter("password");
+        String password = request.getParameter("password");
         String remember = request.getParameter("remember");
-        
-        // Input validation
-        if (email == null || email.trim().isEmpty() || passwordRaw == null || passwordRaw.trim().isEmpty()) {
+
+        if (email == null || password == null || email.trim().isEmpty() || password.trim().isEmpty()) {
             response.sendRedirect("login.jsp?error=empty");
             return;
         }
 
-        User user = authService.login(email.trim(), passwordRaw);
-        
+        User user = authService.login(email.trim(), password);
+
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            
-            // Handle Remember Me Cookie
-            if (remember != null && remember.equals("on")) {
-                Cookie c = new Cookie("remember_user", email.trim());
-                c.setMaxAge(60 * 60 * 24 * 30); // 30 days
-                response.addCookie(c);
-            } else {
-                Cookie c = new Cookie("remember_user", "");
-                c.setMaxAge(0); // Delete cookie
-                response.addCookie(c);
-            }
-            
+            session.setMaxInactiveInterval(15 * 60);
+
+            Cookie rememberCookie = new Cookie("remember_user", email.trim());
+            rememberCookie.setPath("/");
+            rememberCookie.setHttpOnly(true);
+            rememberCookie.setMaxAge("on".equalsIgnoreCase(remember) ? 30 * 24 * 60 * 60 : 0);
+            response.addCookie(rememberCookie);
+
             response.sendRedirect("DashboardServlet");
-        } else {
-            response.sendRedirect("login.jsp?error=invalid");
+            return;
         }
+
+        String encodedEmail = URLEncoder.encode(email.trim(), StandardCharsets.UTF_8);
+        response.sendRedirect("login.jsp?error=invalid&email=" + encodedEmail);
     }
 }
