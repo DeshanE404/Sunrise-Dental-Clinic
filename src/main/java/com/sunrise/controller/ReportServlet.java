@@ -10,6 +10,7 @@ import com.sunrise.service.ReportService;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -33,10 +34,10 @@ public class ReportServlet extends HttpServlet {
         LocalDate endDate = parseDate(request.getParameter("endDate"));
 
         if (selectedDate == null) {
-            selectedDate = LocalDate.now();
+            selectedDate = LocalDate.now(ZoneId.systemDefault());
         }
         if (startDate == null || endDate == null) {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.systemDefault());
             startDate = today.minusDays(6);
             endDate = today;
         }

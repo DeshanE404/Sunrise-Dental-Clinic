@@ -1,7 +1,6 @@
 package com.sunrise.controller;
 
 import com.sunrise.model.Appointment;
-import com.sunrise.model.User;
 import com.sunrise.service.AppointmentService;
 import com.sunrise.service.PatientService;
 import com.sunrise.service.ReportService;

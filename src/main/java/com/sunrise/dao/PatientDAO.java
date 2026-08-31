@@ -2,8 +2,6 @@ package com.sunrise.dao;
 
 import com.sunrise.model.Patient;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PatientDAO {
 
