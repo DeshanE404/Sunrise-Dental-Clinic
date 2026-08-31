@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "sunrise-dental-rest-api",
+    "name": "Sunrise Dental Clinic - REST API",
+    "description": "Collection for testing Sunrise Dental Clinic REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Get Appointment by Number",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments/APT-2026-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "APT-2026-001"]
+            }
+          }
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentNumber\": \"APT-2026-001\",\n  \"patientId\": 1,\n  \"dentistName\": \"Dr. Silva\",\n  \"treatmentId\": 2,\n  \"appointmentDate\": \"2026-09-15\",\n  \"appointmentTime\": \"14:00:00\",\n  \"status\": \"SCHEDULED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Update Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": 1,\n  \"dentistName\": \"Dr. Fernando\",\n  \"treatmentId\": 3,\n  \"appointmentDate\": \"2026-09-16\",\n  \"appointmentTime\": \"10:00:00\",\n  \"status\": \"CONFIRMED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/APT-2026-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "APT-2026-001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/appointments/APT-2026-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "APT-2026-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bills",
+      "item": [
+        {
+          "name": "Get Bill by Appointment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bills/appointment/APT-2026-001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bills", "appointment", "APT-2026-001"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dentists",
+      "item": [
+        {
+          "name": "Get All Dentists",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dentists",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dentists"]
+            }
+          }
+        },
+        {
+          "name": "Get Dentist by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dentists/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dentists", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Treatments",
+      "item": [
+        {
+          "name": "Get All Treatments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/treatments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "treatments"]
+            }
+          }
+        },
+        {
+          "name": "Get Treatment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/treatments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "treatments", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Daily Appointments Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/appointments?date=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "appointments"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-09-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Dentist Workload Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/dentist-workload?from=2026-08-26&to=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "dentist-workload"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-08-26"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Treatment Statistics Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/treatments?from=2026-08-26&to=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "treatments"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-08-26"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/revenue?from=2026-08-26&to=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "revenue"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-08-26"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-09-01"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "item": [
+        {
+          "name": "Test 401 - Unauthorized (logout first)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Test 404 - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/appointments/INVALID-NUMBER",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "INVALID-NUMBER"]
+            }
+          }
+        },
+        {
+          "name": "Test 400 - Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentNumber\": \"\",\n  \"patientId\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments"]
+            }
+          }
+        },
+        {
+          "name": "Test 403 - Forbidden (Receptionist accessing reports)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports/appointments?date=2026-09-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "appointments"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-09-01"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081/SunriseDentalClinic",
+      "type": "string"
+    }
+  ]
+}
