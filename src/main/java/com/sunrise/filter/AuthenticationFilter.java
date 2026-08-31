@@ -1,5 +1,6 @@
 package com.sunrise.filter;
 
+import com.sunrise.dao.UserDAO;
 import com.sunrise.model.User;
 import java.io.IOException;
 import jakarta.servlet.Filter;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 public class AuthenticationFilter implements Filter {
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -29,6 +31,13 @@ public class AuthenticationFilter implements Filter {
         String path = httpRequest.getServletPath();
         String uri = httpRequest.getRequestURI();
 
+        // The application needs one unauthenticated route to bootstrap its first
+        // administrator. UserManagementServlet performs the same count check and
+        // only accepts an ADMIN role when no administrator exists.
+        boolean isInitialAdminRegistration = "POST".equalsIgnoreCase(httpRequest.getMethod())
+                && "/UserManagementServlet".equals(path)
+                && userDAO.getAdminCount() == 0;
+
         boolean isPublicResource = path == null || path.isEmpty()
                 || path.equals("/login.jsp")
                 || path.equals("/LoginServlet")
@@ -44,7 +53,8 @@ public class AuthenticationFilter implements Filter {
                 || path.endsWith(".jpg")
                 || path.endsWith(".jpeg")
                 || path.endsWith(".svg")
-                || path.endsWith(".ico");
+                || path.endsWith(".ico")
+                || isInitialAdminRegistration;
 
         if (isPublicResource) {
             chain.doFilter(request, response);

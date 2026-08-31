@@ -6,6 +6,7 @@ import com.sunrise.service.AppointmentService;
 import com.sunrise.service.PatientService;
 import com.sunrise.service.ReportService;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -27,19 +28,18 @@ public class DashboardServlet extends HttpServlet {
             return;
         }
 
-        User user = (User) session.getAttribute("user");
-
         // Fetch dashboard metrics
         List<Appointment> todayAppointments = appointmentService.getTodayAppointments();
         int todayApptCount = todayAppointments.size();
         int totalPatients = patientService.getTotalPatientsCount();
-        double totalRevenue = reportService.getTotalRevenue();
+        BigDecimal totalRevenue = reportService.getTotalRevenue();
+        if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
         request.setAttribute("todayAppointments", todayAppointments);
         request.setAttribute("todayApptCount", todayApptCount);
         request.setAttribute("totalPatients", totalPatients);
         request.setAttribute("totalRevenue", totalRevenue);
-        
+
         request.getRequestDispatcher("dashboard.jsp").forward(request, response);
     }
 }
