@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
+<%@ page import="java.math.BigDecimal" %>
 <%@ page import="com.sunrise.model.Appointment" %>
 <%@ page import="com.sunrise.model.User" %>
 <%
@@ -12,10 +13,10 @@
     // Fallbacks if attributes are null
     Integer todayApptCount = (Integer) request.getAttribute("todayApptCount");
     Integer totalPatients = (Integer) request.getAttribute("totalPatients");
-    Double totalRevenue = (Double) request.getAttribute("totalRevenue");
+    BigDecimal totalRevenue = (BigDecimal) request.getAttribute("totalRevenue");
     if (todayApptCount == null) todayApptCount = 0;
     if (totalPatients == null) totalPatients = 0;
-    if (totalRevenue == null) totalRevenue = 0.0;
+    if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 %>
 <!DOCTYPE html>
 <html>
@@ -103,7 +104,7 @@
                                         <div class="text-xs fw-bold text-teal text-uppercase mb-1">
                                             Total Revenue
                                         </div>
-                                        <div class="h3 mb-0 fw-bold text-dark">$<%= String.format("%.2f", totalRevenue) %></div>
+                                        <div class="h3 mb-0 fw-bold text-dark">LKR <%= String.format("%.2f", totalRevenue.doubleValue()) %></div>
                                     </div>
                                 </div>
                             </div>
