@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS patients (
     name VARCHAR(100) NOT NULL,
     address TEXT,
     contact_number VARCHAR(20) NOT NULL,
+    email VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
