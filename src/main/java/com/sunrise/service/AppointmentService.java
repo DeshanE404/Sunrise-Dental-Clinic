@@ -10,6 +10,7 @@ import java.util.List;
 public class AppointmentService {
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
     private final TreatmentDAO treatmentDAO = new TreatmentDAO();
+    private final EmailService emailService = new EmailServiceImpl();
 
     public boolean createAppointment(Appointment appt) {
         String validationError = validateAppointment(appt);
@@ -25,7 +26,11 @@ public class AppointmentService {
             return false;
         }
 
-        return appointmentDAO.registerAppointment(appt);
+        boolean saved = appointmentDAO.registerAppointment(appt);
+        if (saved) {
+            sendConfirmationEmail(appt);
+        }
+        return saved;
     }
 
     public boolean updateAppointment(Appointment appt) {
@@ -38,14 +43,24 @@ public class AppointmentService {
             return false;
         }
 
-        return appointmentDAO.updateAppointment(appt);
+        boolean updated = appointmentDAO.updateAppointment(appt);
+        if (updated) {
+            sendUpdatedEmail(appt);
+        }
+        return updated;
     }
 
     public boolean deleteAppointment(String appointmentNo) {
         if (appointmentNo == null || appointmentNo.trim().isEmpty()) {
             return false;
         }
-        return appointmentDAO.deleteAppointment(appointmentNo.trim());
+
+        Appointment existing = getAppointmentDetails(appointmentNo.trim());
+        boolean deleted = appointmentDAO.deleteAppointment(appointmentNo.trim());
+        if (deleted && existing != null) {
+            sendCancellationEmail(existing);
+        }
+        return deleted;
     }
 
     public String validateAppointment(Appointment appt) {
@@ -105,5 +120,37 @@ public class AppointmentService {
 
     public List<Appointment> getTodayAppointments() {
         return appointmentDAO.getTodayAppointments();
+    }
+
+    private void sendConfirmationEmail(Appointment appt) {
+        String patientEmail = getPatientEmail(appt.getPatientId());
+        if (patientEmail == null || patientEmail.isBlank()) {
+            return;
+        }
+        emailService.sendAppointmentConfirmation(appt, patientEmail);
+    }
+
+    private void sendUpdatedEmail(Appointment appt) {
+        String patientEmail = getPatientEmail(appt.getPatientId());
+        if (patientEmail == null || patientEmail.isBlank()) {
+            return;
+        }
+        emailService.sendAppointmentUpdated(appt, patientEmail);
+    }
+
+    private void sendCancellationEmail(Appointment appt) {
+        String patientEmail = getPatientEmail(appt.getPatientId());
+        if (patientEmail == null || patientEmail.isBlank()) {
+            return;
+        }
+        emailService.sendAppointmentCancelled(appt, patientEmail);
+    }
+
+    private String getPatientEmail(int patientId) {
+        if (patientId <= 0) {
+            return null;
+        }
+        com.sunrise.model.Patient patient = new com.sunrise.dao.PatientDAO().getPatientById(patientId);
+        return patient != null ? patient.getEmail() : null;
     }
 }
