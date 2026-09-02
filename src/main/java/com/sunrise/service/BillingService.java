@@ -41,13 +41,12 @@ public class BillingService {
         }
 
         double treatmentCost = treatment.getCost();
-        double total = CONSULTATION_FEE + treatmentCost;
 
         Bill bill = new Bill();
         bill.setAppointmentNo(cleanAppointmentNo);
         bill.setConsultationFee(CONSULTATION_FEE);
         bill.setTreatmentCost(treatmentCost);
-        bill.setTotalBill(total);
+        bill.setTotalBill(0.0);
         bill.setBillingDate(new Timestamp(System.currentTimeMillis()));
 
         boolean success = billDAO.generateBill(bill);
