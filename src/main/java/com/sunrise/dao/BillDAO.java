@@ -10,7 +10,8 @@ public class BillDAO {
             return false;
         }
 
-        String query = "INSERT INTO bills (appointment_no, consultation_fee, treatment_cost, total_bill, billing_date) VALUES (?, ?, ?, ?, ?)";
+        String query = "INSERT INTO bills (appointment_no, consultation_fee, treatment_cost, total_bill, billing_date) " +
+                       "VALUES (?, ?, ?, calculate_bill_total(?, ?), ?)";
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -18,8 +19,9 @@ public class BillDAO {
             preparedStatement.setString(1, bill.getAppointmentNo().trim());
             preparedStatement.setDouble(2, bill.getConsultationFee());
             preparedStatement.setDouble(3, bill.getTreatmentCost());
-            preparedStatement.setDouble(4, bill.getTotalBill());
-            preparedStatement.setTimestamp(5, bill.getBillingDate());
+            preparedStatement.setDouble(4, bill.getConsultationFee());
+            preparedStatement.setDouble(5, bill.getTreatmentCost());
+            preparedStatement.setTimestamp(6, bill.getBillingDate());
 
             int rowsAffected = preparedStatement.executeUpdate();
             return rowsAffected > 0;

@@ -21,4 +21,12 @@ public class DatabaseConnection {
             return null;
         }
     }
+
+    public static boolean isDatabaseAvailable() {
+        try (Connection connection = getConnection()) {
+            return connection != null && !connection.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
 }

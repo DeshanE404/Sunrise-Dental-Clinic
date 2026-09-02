@@ -54,14 +54,75 @@ CREATE TABLE IF NOT EXISTS bills (
     billing_date TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS appointment_audit (
+    audit_id SERIAL PRIMARY KEY,
+    appointment_no VARCHAR(30) NOT NULL,
+    action VARCHAR(20) NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'CANCEL', 'DELETE')),
+    old_status VARCHAR(20),
+    new_status VARCHAR(20),
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    note TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_appointments_dentist_datetime
     ON appointments (dentist_name, appointment_date);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_appointments_single_booking
+    ON appointments (dentist_name, appointment_date)
+    WHERE status <> 'CANCELLED';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_appointment_no_unique
     ON bills (appointment_no);
 
 CREATE INDEX IF NOT EXISTS idx_appointments_status
     ON appointments (status);
+
+CREATE OR REPLACE FUNCTION calculate_bill_total(p_consultation_fee NUMERIC, p_treatment_cost NUMERIC)
+RETURNS NUMERIC
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF p_consultation_fee < 0 OR p_treatment_cost < 0 THEN
+        RAISE EXCEPTION 'Consultation fee and treatment cost must be non-negative';
+    END IF;
+
+    RETURN p_consultation_fee + p_treatment_cost;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION log_appointment_audit()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO appointment_audit (appointment_no, action, old_status, new_status, note)
+        VALUES (NEW.appointment_no, 'INSERT', NULL, NEW.status, 'Appointment created');
+        RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF NEW.status = 'CANCELLED' AND OLD.status <> 'CANCELLED' THEN
+            INSERT INTO appointment_audit (appointment_no, action, old_status, new_status, note)
+            VALUES (NEW.appointment_no, 'CANCEL', OLD.status, NEW.status, 'Appointment cancelled');
+        ELSE
+            INSERT INTO appointment_audit (appointment_no, action, old_status, new_status, note)
+            VALUES (NEW.appointment_no, 'UPDATE', OLD.status, NEW.status, 'Appointment updated');
+        END IF;
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO appointment_audit (appointment_no, action, old_status, new_status, note)
+        VALUES (OLD.appointment_no, 'DELETE', OLD.status, NULL, 'Appointment deleted');
+        RETURN OLD;
+    END IF;
+
+    RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_appointment_audit
+AFTER INSERT OR UPDATE OF patient_id, dentist_name, treatment_id, appointment_date, status OR DELETE
+ON appointments
+FOR EACH ROW
+EXECUTE FUNCTION log_appointment_audit();
 
 -- Default admin and reception users will be created via API / Postman.
 
