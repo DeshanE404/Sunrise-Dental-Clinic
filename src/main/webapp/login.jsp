@@ -1,8 +1,45 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.sunrise.dao.RememberTokenDAO" %>
+<%@ page import="com.sunrise.dao.UserDAO" %>
+<%@ page import="com.sunrise.model.User" %>
+<%@ page import="com.sunrise.util.TokenUtil" %>
 <%
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
+
+    // If the user already has a live session, take them straight to the dashboard.
+    User loggedInUser = (User) session.getAttribute("user");
+    if (loggedInUser == null) {
+        // No live session yet - try the persistent "remember me" cookie so users
+        // who are still logged in (e.g. after a server restart) are not asked to
+        // sign in again when they open the login page directly.
+        Cookie[] authCookies = request.getCookies();
+        String rememberToken = null;
+        if (authCookies != null) {
+            for (Cookie c : authCookies) {
+                if ("remember_token".equals(c.getName())) {
+                    rememberToken = c.getValue();
+                    break;
+                }
+            }
+        }
+        if (rememberToken != null && !rememberToken.trim().isEmpty()) {
+            Integer rememberedUserId = new RememberTokenDAO().findUserIdByTokenHash(TokenUtil.sha256Hex(rememberToken.trim()));
+            if (rememberedUserId != null) {
+                User rememberedUser = new UserDAO().getUserById(rememberedUserId);
+                if (rememberedUser != null) {
+                    session.setAttribute("user", rememberedUser);
+                    loggedInUser = rememberedUser;
+                }
+            }
+        }
+    }
+
+    if (loggedInUser != null) {
+        response.sendRedirect("DashboardServlet");
+        return;
+    }
 
     String savedEmail = "";
     Cookie[] cookies = request.getCookies();

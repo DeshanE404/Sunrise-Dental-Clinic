@@ -46,4 +46,7 @@ desktop.ini
 .env
 db-config.properties
 application-local.properties
+email.properties
+
+#null
 nul

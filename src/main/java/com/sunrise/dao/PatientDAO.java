@@ -26,6 +26,19 @@ public class PatientDAO {
         return -1;
     }
 
+    public boolean updateEmail(int patientId, String email) {
+        String query = "UPDATE patients SET email = ? WHERE patient_id = ?";
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, email);
+            preparedStatement.setInt(2, patientId);
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public Patient getPatientById(int patientId) {
         String query = "SELECT * FROM patients WHERE patient_id = ?";
         
