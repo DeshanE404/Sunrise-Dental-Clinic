@@ -13,9 +13,20 @@ import java.util.Collections;
 import java.util.List;
 
 public class AppointmentService {
-    private final AppointmentDAO appointmentDAO = new AppointmentDAO();
-    private final TreatmentDAO treatmentDAO = new TreatmentDAO();
-    private final EmailService emailService = new EmailServiceImpl();
+    private final AppointmentDAO appointmentDAO;
+    private final TreatmentDAO treatmentDAO;
+    private final EmailService emailService;
+
+    public AppointmentService() {
+        this(new AppointmentDAO(), new TreatmentDAO(), new EmailServiceImpl());
+    }
+
+    // Package-private constructor that allows tests to inject lightweight fakes.
+    AppointmentService(AppointmentDAO appointmentDAO, TreatmentDAO treatmentDAO, EmailService emailService) {
+        this.appointmentDAO = appointmentDAO;
+        this.treatmentDAO = treatmentDAO;
+        this.emailService = emailService;
+    }
 
     public String getNextAppointmentNumber() {
         return appointmentDAO.getNextAppointmentNumber(Year.now().getValue());

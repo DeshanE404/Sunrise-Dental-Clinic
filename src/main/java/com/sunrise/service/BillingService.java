@@ -9,9 +9,20 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public class BillingService {
-    private final BillDAO billDAO = new BillDAO();
-    private final TreatmentDAO treatmentDAO = new TreatmentDAO();
-    private final AppointmentService appointmentService = new AppointmentService();
+    private final BillDAO billDAO;
+    private final TreatmentDAO treatmentDAO;
+    private final AppointmentService appointmentService;
+
+    public BillingService() {
+        this(new BillDAO(), new TreatmentDAO(), new AppointmentService());
+    }
+
+    // Package-private constructor that allows tests to inject lightweight fakes.
+    BillingService(BillDAO billDAO, TreatmentDAO treatmentDAO, AppointmentService appointmentService) {
+        this.billDAO = billDAO;
+        this.treatmentDAO = treatmentDAO;
+        this.appointmentService = appointmentService;
+    }
 
     private static final double CONSULTATION_FEE = 500.0; // LKR registration & administration fee
 

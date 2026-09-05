@@ -98,6 +98,12 @@
                                 <textarea class="form-control" id="address" name="address" rows="2" placeholder="Patient address"></textarea>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="patientEmail" class="form-label">Patient Email <span class="text-muted small">(for appointment notifications)</span></label>
+                                <input type="email" class="form-control" id="patientEmail" name="patientEmail" placeholder="patient@example.com">
+                                <div class="invalid-feedback">Please enter a valid email address if provided.</div>
+                            </div>
+
 
                             <div class="row">
                                 <div class="col-md-4 mb-3">

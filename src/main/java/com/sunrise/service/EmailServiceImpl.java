@@ -6,18 +6,23 @@ import com.sunrise.model.Treatment;
 import com.sunrise.dao.PatientDAO;
 import com.sunrise.dao.TreatmentDAO;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class EmailServiceImpl implements EmailService {
     private static final Logger LOGGER = Logger.getLogger(EmailServiceImpl.class.getName());
     private static final String DEFAULT_EMAIL_FROM = "noreply@sunrisedentalclinic.com";
+    private static final String DEFAULT_EMAIL_FROM_NAME = "Sunrise Dental Clinic";
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+    private static final Properties LOCAL_CONFIG = loadLocalConfig();
     private final PatientDAO patientDAO = new PatientDAO();
     private final TreatmentDAO treatmentDAO = new TreatmentDAO();
 
@@ -134,8 +139,9 @@ public class EmailServiceImpl implements EmailService {
             return false;
         }
 
-        String apiKey = System.getenv("EMAIL_API_KEY");
-        String fromEmail = System.getenv().getOrDefault("EMAIL_FROM", DEFAULT_EMAIL_FROM);
+        String apiKey = setting("EMAIL_API_KEY", null);
+        String fromEmail = setting("EMAIL_FROM", DEFAULT_EMAIL_FROM);
+        String fromName = setting("EMAIL_FROM_NAME", DEFAULT_EMAIL_FROM_NAME);
 
         if (apiKey == null || apiKey.trim().isEmpty()) {
             LOGGER.log(Level.WARNING, "Email provider API key missing. Notification not sent.");
@@ -143,18 +149,21 @@ public class EmailServiceImpl implements EmailService {
         }
 
         try {
-            URL url = new URL("https://api.resend.com/emails");
+            URL url = new URL(BREVO_API_URL);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setRequestProperty("accept", "application/json");
+            connection.setRequestProperty("api-key", apiKey);
             connection.setRequestProperty("Content-Type", "application/json");
 
             String payload = "{\n"
-                    + "  \"from\": \"" + fromEmail + "\",\n"
-                    + "  \"to\": [\"" + patientEmail + "\"],\n"
-                    + "  \"subject\": \"" + subject.replace("\"", "\\\"") + "\",\n"
-                    + "  \"html\": \"" + htmlBody.replace("\\", "\\\\").replace("\"", "\\\"") + "\"\n"
+                    + "  \"sender\": {\"name\": \"" + jsonEscape(fromName) + "\", \"email\": \"" + jsonEscape(fromEmail) + "\"},\n"
+                    + "  \"to\": [{\"email\": \"" + jsonEscape(patientEmail) + "\"}],\n"
+                    + "  \"subject\": \"" + jsonEscape(subject) + "\",\n"
+                    + "  \"htmlContent\": \"" + jsonEscape(htmlBody) + "\"\n"
                     + "}";
 
             try (OutputStream os = connection.getOutputStream()) {
@@ -167,7 +176,8 @@ public class EmailServiceImpl implements EmailService {
                 return true;
             }
 
-            LOGGER.log(Level.WARNING, "Email provider rejected notification: HTTP " + statusCode + " | To: " + patientEmail + " | Subject: " + subject);
+            LOGGER.log(Level.WARNING, "Email provider rejected notification: HTTP " + statusCode
+                    + " | To: " + patientEmail + " | Subject: " + subject);
             return false;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Email sending failed for patient " + patientEmail + ". Application continues without crashing.", e);
@@ -206,7 +216,50 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private boolean isEmailEnabled() {
-        return "true".equalsIgnoreCase(System.getProperty("EMAIL_ENABLED", System.getenv().getOrDefault("EMAIL_ENABLED", "true")));
+        return "true".equalsIgnoreCase(setting("EMAIL_ENABLED", "true"));
+    }
+
+    /**
+     * Resolves a configuration value in order of precedence:
+     * 1. JVM system property (-DEMAIL_API_KEY=...)
+     * 2. environment variable
+     * 3. src/main/resources/email.properties (local, never committed to git)
+     */
+    private String setting(String name, String defaultValue) {
+        String value = System.getProperty(name);
+        if (value == null || value.trim().isEmpty()) {
+            value = System.getenv(name);
+        }
+        if (value == null || value.trim().isEmpty() && LOCAL_CONFIG != null) {
+            value = LOCAL_CONFIG.getProperty(name);
+        }
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return value.trim();
+    }
+
+    private static Properties loadLocalConfig() {
+        Properties props = new Properties();
+        try (InputStream in = EmailServiceImpl.class.getResourceAsStream("/email.properties")) {
+            if (in != null) {
+                props.load(in);
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not load email.properties", e);
+        }
+        return props;
+    }
+
+    private String jsonEscape(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 
     private String formatDate(Timestamp ts) {

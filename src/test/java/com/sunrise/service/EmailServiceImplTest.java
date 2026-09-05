@@ -55,4 +55,28 @@ class EmailServiceImplTest {
             }
         }
     }
+
+    @Test
+    void buildUpdatedHtmlContainsRequiredDetails() {
+        EmailServiceImpl service = new EmailServiceImpl();
+        String html = service.buildUpdatedHtml(
+                "APT-2026-0003", "Jane Perera", "Dr. Silva", "Whitening",
+                "2026-09-16", "14:00", "CONFIRMED");
+
+        assertTrue(html.contains("Appointment Updated"));
+        assertTrue(html.contains("APT-2026-0003"));
+        assertTrue(html.contains("Jane Perera"));
+        assertTrue(html.contains("CONFIRMED"));
+    }
+
+    @Test
+    void buildCancelledHtmlContainsRequiredDetails() {
+        EmailServiceImpl service = new EmailServiceImpl();
+        String html = service.buildCancelledHtml(
+                "APT-2026-0004", "Jane Perera", "Dr. Silva", "2026-09-16", "14:00");
+
+        assertTrue(html.contains("Appointment Cancelled"));
+        assertTrue(html.contains("APT-2026-0004"));
+        assertTrue(html.contains("Jane Perera"));
+    }
 }

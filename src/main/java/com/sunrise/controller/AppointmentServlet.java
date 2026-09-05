@@ -106,6 +106,7 @@ public class AppointmentServlet extends HttpServlet {
         String patientName = request.getParameter("patientName");
         String address = request.getParameter("address");
         String contactNumber = request.getParameter("contactNumber");
+        String patientEmail = request.getParameter("patientEmail");
         String dentistName = request.getParameter("dentistName");
         String dateTimeStr = request.getParameter("appointmentDate");
         String status = request.getParameter("status");
@@ -127,7 +128,8 @@ public class AppointmentServlet extends HttpServlet {
                 return;
             }
 
-            int patientId = patientService.getOrCreatePatient(patientName.trim(), address == null ? "" : address.trim(), contactNumber.trim());
+            int patientId = patientService.getOrCreatePatient(patientName.trim(), address == null ? "" : address.trim(),
+                    contactNumber.trim(), patientEmail);
 
             if (patientId == -1) {
                 response.sendRedirect("AppointmentServlet?action=new&error=patient_failed");
@@ -179,6 +181,7 @@ public class AppointmentServlet extends HttpServlet {
         String patientName = request.getParameter("patientName");
         String address = request.getParameter("address");
         String contactNumber = request.getParameter("contactNumber");
+        String patientEmail = request.getParameter("patientEmail");
         String dentistName = request.getParameter("dentistName");
         String dateTimeStr = request.getParameter("appointmentDate");
         String status = request.getParameter("status");
@@ -195,7 +198,8 @@ public class AppointmentServlet extends HttpServlet {
                 return;
             }
 
-            int patientId = patientService.getOrCreatePatient(patientName.trim(), address == null ? "" : address.trim(), contactNumber.trim());
+            int patientId = patientService.getOrCreatePatient(patientName.trim(), address == null ? "" : address.trim(),
+                    contactNumber.trim(), patientEmail);
 
             if (patientId == -1) {
                 response.sendRedirect("AppointmentServlet?action=edit&appointmentNo=" + apptNo + "&error=patient_failed");
