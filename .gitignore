@@ -37,3 +37,4 @@ Thumbs.db
 *.db
 .env
 .env.*
+nul
