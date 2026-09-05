@@ -1,40 +1,49 @@
-# Java / Eclipse build output
-*.class
-bin/
-build/
-target/
-out/
+# ============================================================
+# Sunrise Dental Clinic - Eclipse Dynamic Web Project
+# ============================================================
 
-# Eclipse project files
+# ---- Eclipse IDE (machine-specific, do NOT commit) ----
 .classpath
 .project
 .settings/
-.metadata/
-*.launch
+.buildpath
 
-# Java EE / web app generated folders
-src/main/webapp/WEB-INF/classes/
-src/main/webapp/WEB-INF/lib/
-**/WEB-INF/classes/
-**/WEB-INF/lib/
+# ---- Build & Compiled Output ----
+bin/
+build/
+out/
+target/
+*.class
 
-# IDE files
-.idea/
-.vscode/
-*.iml
-*.ipr
-*.iws
+# ---- Tomcat Work Directory ----
+work/
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
+# ---- Logs ----
 *.log
+logs/
 
-# Local environment / DB files
-*.sqlite
-*.db
+# ---- Compiled / Temp Files ----
+*.ser
+*.swp
+*~
+
+# ---- IntelliJ IDEA ----
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ---- VS Code ----
+.vscode/
+
+# ---- OS Junk ----
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ---- Secrets & Credentials (NEVER commit!) ----
+*.env
 .env
-.env.*
+db-config.properties
+application-local.properties
 nul

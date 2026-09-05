@@ -10,7 +10,11 @@ public class UserService {
 
     public boolean registerUser(String name, String email, String password, String employeeNumber, String phoneNumber, String role, User currentSessionUser) {
         // Validation: If no admin exists, allow creating the first admin without authentication
-        if ("ADMIN".equalsIgnoreCase(role) && userDAO.getAdminCount() == 0) {
+        int adminCount = userDAO.getAdminCount();
+        if (adminCount < 0) {
+            return false;
+        }
+        if ("ADMIN".equalsIgnoreCase(role) && adminCount == 0) {
             return saveUser(name, email, password, employeeNumber, phoneNumber, "ADMIN");
         }
         
@@ -35,5 +39,39 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userDAO.getAllUsers();
+    }
+
+    /**
+     * Removes an existing ADMIN or RECEPTION user.
+     * Only an ADMIN can remove users, an admin cannot remove their own
+     * account, and the very last remaining ADMIN cannot be removed so the
+     * system always has at least one administrator.
+     *
+     * Returns 0 = success, 1 = target not found, 2 = forbidden, 3 = self-removal
+     * blocked, 4 = cannot remove the last admin.
+     */
+    public int removeUser(int userId, User currentSessionUser) {
+        if (currentSessionUser == null || !"ADMIN".equalsIgnoreCase(currentSessionUser.getRole())) {
+            return 2;
+        }
+
+        User target = userDAO.getUserById(userId);
+        if (target == null) {
+            return 1;
+        }
+
+        if (target.getId() == currentSessionUser.getId()) {
+            return 3;
+        }
+
+        if ("ADMIN".equalsIgnoreCase(target.getRole()) && userDAO.getAdminCount() <= 1) {
+            return 4;
+        }
+
+        return userDAO.deleteUser(userId) ? 0 : 5;
+    }
+
+    public int getAdminCount() {
+        return userDAO.getAdminCount();
     }
 }

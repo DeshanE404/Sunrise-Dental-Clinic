@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
+<%@ page import="java.math.BigDecimal" %>
 <%@ page import="com.sunrise.model.Appointment" %>
 <%@ page import="com.sunrise.model.User" %>
 <%
@@ -12,10 +13,10 @@
     // Fallbacks if attributes are null
     Integer todayApptCount = (Integer) request.getAttribute("todayApptCount");
     Integer totalPatients = (Integer) request.getAttribute("totalPatients");
-    Double totalRevenue = (Double) request.getAttribute("totalRevenue");
+    BigDecimal totalRevenue = (BigDecimal) request.getAttribute("totalRevenue");
     if (todayApptCount == null) todayApptCount = 0;
     if (totalPatients == null) totalPatients = 0;
-    if (totalRevenue == null) totalRevenue = 0.0;
+    if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 %>
 <!DOCTYPE html>
 <html>
@@ -36,12 +37,12 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 p-0">
+            <div class="sidebar-column col-md-3 col-lg-2 p-0">
                 <jsp:include page="includes/sidebar.jsp" />
             </div>
             
             <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 p-4">
+            <div class="content-column col-md-9 col-lg-10 p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="text-teal fw-bold">Admin Dashboard</h2>
@@ -103,7 +104,7 @@
                                         <div class="text-xs fw-bold text-teal text-uppercase mb-1">
                                             Total Revenue
                                         </div>
-                                        <div class="h3 mb-0 fw-bold text-dark">$<%= String.format("%.2f", totalRevenue) %></div>
+                                        <div class="h3 mb-0 fw-bold text-dark">LKR <%= String.format("%.2f", totalRevenue.doubleValue()) %></div>
                                     </div>
                                 </div>
                             </div>
@@ -137,8 +138,8 @@
                                         <td><strong><%= a.getAppointmentNo() %></strong></td>
                                         <td><%= a.getPatientName() %></td>
                                         <td><%= a.getPatientContact() %></td>
-                                        <td>Dr. <%= a.getDentistName() %></td>
-                                        <td><%= a.getTreatmentName() %></td>
+                                        <td><%= a.getDentistName() %></td>
+                                        <td><%= a.getTreatmentName() != null ? a.getTreatmentName() : "-" %></td>
                                         <td><%= a.getAppointmentDate() %></td>
                                         <td class="text-center">
                                             <a href="BillServlet?appointmentNo=<%= a.getAppointmentNo() %>" class="btn btn-sm btn-teal">Process Bill</a>

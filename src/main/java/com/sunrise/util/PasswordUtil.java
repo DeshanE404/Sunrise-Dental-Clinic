@@ -4,6 +4,10 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class PasswordUtil {
     
+    private PasswordUtil() {
+        // Private constructor to hide implicit public constructor
+    }
+    
     // Hash a password using BCrypt
     public static String hashPassword(String plainTextPassword) {
         return BCrypt.hashpw(plainTextPassword, BCrypt.gensalt(12));

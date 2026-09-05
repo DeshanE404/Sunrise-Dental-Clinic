@@ -2,13 +2,11 @@ package com.sunrise.dao;
 
 import com.sunrise.model.Patient;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PatientDAO {
 
     public int registerPatient(Patient patient) {
-        String query = "INSERT INTO patients (name, address, contact_number) VALUES (?, ?, ?) RETURNING patient_id";
+        String query = "INSERT INTO patients (name, address, contact_number, email) VALUES (?, ?, ?, ?) RETURNING patient_id";
         
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -16,6 +14,7 @@ public class PatientDAO {
             preparedStatement.setString(1, patient.getName());
             preparedStatement.setString(2, patient.getAddress());
             preparedStatement.setString(3, patient.getContactNumber());
+            preparedStatement.setString(4, patient.getEmail());
             
             ResultSet rs = preparedStatement.executeQuery();
             if (rs.next()) {
@@ -42,6 +41,7 @@ public class PatientDAO {
                 p.setName(rs.getString("name"));
                 p.setAddress(rs.getString("address"));
                 p.setContactNumber(rs.getString("contact_number"));
+                p.setEmail(rs.getString("email"));
                 return p;
             }
         } catch (SQLException e) {
@@ -66,6 +66,7 @@ public class PatientDAO {
                 p.setName(rs.getString("name"));
                 p.setAddress(rs.getString("address"));
                 p.setContactNumber(rs.getString("contact_number"));
+                p.setEmail(rs.getString("email"));
                 return p;
             }
         } catch (SQLException e) {

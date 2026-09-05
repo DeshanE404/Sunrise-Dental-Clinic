@@ -1,61 +1,72 @@
 package com.sunrise.service;
 
-import com.sunrise.dao.DatabaseConnection;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.sunrise.dao.ReportDAO;
+import com.sunrise.model.DailyAppointmentReport;
+import com.sunrise.model.DashboardSummary;
+import com.sunrise.model.DentistWorkloadReport;
+import com.sunrise.model.RevenueReport;
+import com.sunrise.model.TreatmentStatisticsReport;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 public class ReportService {
+    private final ReportDAO reportDAO = new ReportDAO();
 
-    public double getTotalRevenue() {
-        String query = "SELECT SUM(total_bill) AS total FROM bills";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getDouble("total");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0.0;
+    public BigDecimal getTotalRevenue() {
+        return reportDAO.getTotalRevenue();
     }
 
-    public Map<String, Integer> getTreatmentPopularity() {
-        Map<String, Integer> stats = new HashMap<>();
-        String query = "SELECT t.treatment_name, COUNT(a.appointment_no) AS count " +
-                       "FROM appointments a " +
-                       "JOIN treatments t ON a.treatment_id = t.treatment_id " +
-                       "GROUP BY t.treatment_name";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                stats.put(rs.getString("treatment_name"), rs.getInt("count"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public DashboardSummary getDashboardSummary(LocalDate reportDate) {
+        if (reportDate == null) {
+            reportDate = LocalDate.now();
         }
-        return stats;
+        return reportDAO.getDashboardSummary(reportDate);
     }
 
-    public Map<String, Integer> getDentistAppointmentsCount() {
-        Map<String, Integer> stats = new HashMap<>();
-        String query = "SELECT dentist_name, COUNT(appointment_no) AS count FROM appointments GROUP BY dentist_name";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                stats.put(rs.getString("dentist_name"), rs.getInt("count"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public List<DailyAppointmentReport> getDailyAppointments(LocalDate selectedDate) {
+        if (selectedDate == null) {
+            selectedDate = LocalDate.now();
         }
-        return stats;
+        return reportDAO.getDailyAppointments(selectedDate);
+    }
+
+    public List<DentistWorkloadReport> getDentistWorkload(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            LocalDate today = LocalDate.now();
+            return reportDAO.getDentistWorkload(today.minusDays(6), today);
+        }
+        if (startDate.isAfter(endDate)) {
+            LocalDate temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        return reportDAO.getDentistWorkload(startDate, endDate);
+    }
+
+    public List<TreatmentStatisticsReport> getTreatmentStatistics(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            LocalDate today = LocalDate.now();
+            return reportDAO.getTreatmentStatistics(today.minusDays(6), today);
+        }
+        if (startDate.isAfter(endDate)) {
+            LocalDate temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        return reportDAO.getTreatmentStatistics(startDate, endDate);
+    }
+
+    public List<RevenueReport> getRevenueReport(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            LocalDate today = LocalDate.now();
+            return reportDAO.getRevenueReport(today.minusDays(6), today);
+        }
+        if (startDate.isAfter(endDate)) {
+            LocalDate temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        return reportDAO.getRevenueReport(startDate, endDate);
     }
 }
