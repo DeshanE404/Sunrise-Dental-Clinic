@@ -47,11 +47,11 @@
 <body class="bg-light">
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-3 col-lg-2 p-0 no-print">
+            <div class="sidebar-column col-md-3 col-lg-2 p-0 no-print">
                 <jsp:include page="includes/sidebar.jsp" />
             </div>
 
-            <div class="col-md-9 col-lg-10 p-4">
+            <div class="content-column col-md-9 col-lg-10 p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3 no-print">
                     <div>
                         <h2 class="mb-1">Reports Dashboard</h2>
@@ -120,7 +120,7 @@
                         <div class="card border-warning h-100">
                             <div class="card-body">
                                 <div class="text-muted text-uppercase small">Revenue</div>
-                                <h3 class="mb-0">$<%= String.format("%.2f", totalRevenue) %></h3>
+                                <h3 class="mb-0">LKR <%= String.format("%,.2f", totalRevenue) %></h3>
                             </div>
                         </div>
                     </div>
@@ -258,9 +258,9 @@
                                             <tr>
                                                 <td><%= row.getReportDate() %></td>
                                                 <td><%= row.getBillCount() %></td>
-                                                <td>$<%= String.format("%.2f", row.getTreatmentRevenue()) %></td>
-                                                <td>$<%= String.format("%.2f", row.getConsultationRevenue()) %></td>
-                                                <td>$<%= String.format("%.2f", row.getTotalRevenue()) %></td>
+                                                <td>LKR <%= String.format("%,.2f", row.getTreatmentRevenue()) %></td>
+                                                <td>LKR <%= String.format("%,.2f", row.getConsultationRevenue()) %></td>
+                                                <td>LKR <%= String.format("%,.2f", row.getTotalRevenue()) %></td>
                                             </tr>
                                         <% } %>
                                     </tbody>

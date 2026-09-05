@@ -47,13 +47,17 @@ public class ReportDAO {
     }
 
     public List<DailyAppointmentReport> getDailyAppointments(LocalDate selectedDate) {
-        String query = "SELECT a.appointment_no, p.name AS patient_name, a.dentist_name, t.treatment_name, " +
-                "a.appointment_date, a.status " +
-                "FROM appointments a " +
-                "JOIN patients p ON p.patient_id = a.patient_id " +
-                "LEFT JOIN treatments t ON t.treatment_id = a.treatment_id " +
-                "WHERE DATE(a.appointment_date) = ? " +
-                "ORDER BY a.appointment_date ASC";
+        String query = "SELECT a.appointment_no, p.name AS patient_name, a.dentist_name, "
+                + "COALESCE((SELECT string_agg(t2.treatment_name, ', ' ORDER BY t2.treatment_name) "
+                + "          FROM appointment_treatments at2 "
+                + "          JOIN treatments t2 ON t2.treatment_id = at2.treatment_id "
+                + "          WHERE at2.appointment_no = a.appointment_no), t.treatment_name) AS treatment_name, "
+                + "a.appointment_date, a.status "
+                + "FROM appointments a "
+                + "JOIN patients p ON p.patient_id = a.patient_id "
+                + "LEFT JOIN treatments t ON t.treatment_id = a.treatment_id "
+                + "WHERE DATE(a.appointment_date) = ? "
+                + "ORDER BY a.appointment_date ASC";
 
         List<DailyAppointmentReport> report = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -115,10 +119,11 @@ public class ReportDAO {
     public List<TreatmentStatisticsReport> getTreatmentStatistics(LocalDate startDate, LocalDate endDate) {
         String query = "SELECT " +
                 "t.treatment_name, " +
-                "COUNT(a.appointment_id) AS appointment_count, " +
-                "ROUND((COUNT(a.appointment_id)::numeric / NULLIF(total.total_appointments, 0)) * 100, 2) AS percentage_of_total " +
+                "COUNT(at.treatment_id) FILTER (WHERE a.appointment_no IS NOT NULL) AS appointment_count, " +
+                "ROUND((COUNT(at.treatment_id) FILTER (WHERE a.appointment_no IS NOT NULL))::numeric / NULLIF(total.total_appointments, 0) * 100, 2) AS percentage_of_total " +
                 "FROM treatments t " +
-                "LEFT JOIN appointments a ON a.treatment_id = t.treatment_id AND DATE(a.appointment_date) BETWEEN ? AND ? " +
+                "LEFT JOIN appointment_treatments at ON at.treatment_id = t.treatment_id " +
+                "LEFT JOIN appointments a ON a.appointment_no = at.appointment_no AND DATE(a.appointment_date) BETWEEN ? AND ? " +
                 "CROSS JOIN (SELECT COUNT(*) AS total_appointments FROM appointments WHERE DATE(appointment_date) BETWEEN ? AND ?) AS total " +
                 "GROUP BY t.treatment_name, total.total_appointments " +
                 "ORDER BY appointment_count DESC, t.treatment_name ASC";

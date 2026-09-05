@@ -34,9 +34,8 @@ public class AuthenticationFilter implements Filter {
         // The application needs one unauthenticated route to bootstrap its first
         // administrator. UserManagementServlet performs the same count check and
         // only accepts an ADMIN role when no administrator exists.
-        boolean isInitialAdminRegistration = "POST".equalsIgnoreCase(httpRequest.getMethod())
-                && "/UserManagementServlet".equals(path)
-                && userDAO.getAdminCount() == 0;
+        boolean isUserRegistration = "POST".equalsIgnoreCase(httpRequest.getMethod())
+            && "/UserManagementServlet".equals(path);
 
         boolean isPublicResource = path == null || path.isEmpty()
                 || path.equals("/login.jsp")
@@ -54,7 +53,7 @@ public class AuthenticationFilter implements Filter {
                 || path.endsWith(".jpeg")
                 || path.endsWith(".svg")
                 || path.endsWith(".ico")
-                || isInitialAdminRegistration;
+                || isUserRegistration;
 
         if (isPublicResource) {
             chain.doFilter(request, response);
@@ -71,7 +70,9 @@ public class AuthenticationFilter implements Filter {
 
         boolean isAdminPage = uri.contains("UserManagementServlet")
                 || uri.contains("ReportServlet")
+                || uri.contains("DentistServlet")
                 || uri.contains("manage_users.jsp")
+                || uri.contains("manage_dentists.jsp")
                 || uri.contains("reports.jsp");
 
         if (isAdminPage && !"ADMIN".equalsIgnoreCase(user.getRole())) {

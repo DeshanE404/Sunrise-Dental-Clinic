@@ -23,12 +23,12 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 p-0">
+            <div class="sidebar-column col-md-3 col-lg-2 p-0">
                 <jsp:include page="includes/sidebar.jsp" />
             </div>
             
             <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 p-4">
+            <div class="content-column col-md-9 col-lg-10 p-4">
                 <h2>User Management</h2>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
@@ -48,10 +48,45 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <% 
+                    } else if ("deleted".equals(success)) {
+                %>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        User removed successfully.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <%
                     } else if ("creation_failed".equals(error)) {
                 %>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         Failed to create user. Ensure Email and Employee Number are unique.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <%
+                    } else if ("self_blocked".equals(error)) {
+                %>
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        You cannot remove your own account while you are logged in.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <%
+                    } else if ("last_admin_blocked".equals(error)) {
+                %>
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        You cannot remove the last remaining ADMIN. Create another admin first.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <%
+                    } else if ("user_not_found".equals(error)) {
+                %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        The user you tried to remove no longer exists.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <%
+                    } else if ("delete_failed".equals(error)) {
+                %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        Failed to remove the user. Please try again.
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <% } %>
@@ -119,6 +154,7 @@
                                             <th>Name</th>
                                             <th>Email</th>
                                             <th>Role</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -126,10 +162,16 @@
                                             List<User> userList = (List<User>) request.getAttribute("users");
                                             if (userList != null && !userList.isEmpty()) {
                                                 for(User u : userList) {
+                                                    boolean isSelf = currentUser != null && u.getId() == currentUser.getId();
                                         %>
                                         <tr>
                                             <td><%= u.getEmployeeNumber() %></td>
-                                            <td><%= u.getName() %></td>
+                                            <td>
+                                                <%= u.getName() %>
+                                                <% if (isSelf) { %>
+                                                    <span class="badge bg-info ms-1">You</span>
+                                                <% } %>
+                                            </td>
                                             <td><%= u.getEmail() %></td>
                                             <td>
                                                 <% if ("ADMIN".equals(u.getRole())) { %>
@@ -138,12 +180,24 @@
                                                     <span class="badge bg-secondary">RECEPTION</span>
                                                 <% } %>
                                             </td>
+                                            <td class="text-center">
+                                                <% if (!isSelf) { %>
+                                                    <form action="UserManagementServlet" method="post" class="d-inline"
+                                                          onsubmit="return confirm('Remove user <%= u.getName().replace("'", "\\'") %> (<%= u.getEmail() %>)?');">
+                                                        <input type="hidden" name="action" value="delete">
+                                                        <input type="hidden" name="userId" value="<%= u.getId() %>">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
+                                                    </form>
+                                                <% } else { %>
+                                                    <span class="text-muted small">-</span>
+                                                <% } %>
+                                            </td>
                                         </tr>
                                         <% 
                                                 }
                                             } else {
                                         %>
-                                        <tr><td colspan="4" class="text-center text-muted">No users found.</td></tr>
+                                        <tr><td colspan="5" class="text-center text-muted">No users found.</td></tr>
                                         <% } %>
                                     </tbody>
                                 </table>

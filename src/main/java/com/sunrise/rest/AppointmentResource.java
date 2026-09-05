@@ -187,6 +187,11 @@ public class AppointmentResource {
         }
         if (dto.getTreatmentId() > 0) {
             existing.setTreatmentId(dto.getTreatmentId());
+            // A REST client sends one treatmentId; make that the only treatment
+            // registered on the appointment.
+            List<Integer> singleTreatment = new ArrayList<>();
+            singleTreatment.add(dto.getTreatmentId());
+            existing.setTreatmentIds(singleTreatment);
         }
         if (dto.getAppointmentDate() != null && !dto.getAppointmentDate().trim().isEmpty()) {
             try {

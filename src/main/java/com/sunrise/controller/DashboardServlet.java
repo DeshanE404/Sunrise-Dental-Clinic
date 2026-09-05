@@ -16,10 +16,11 @@ import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/DashboardServlet")
 public class DashboardServlet extends HttpServlet {
-    private AppointmentService appointmentService = new AppointmentService();
-    private PatientService patientService = new PatientService();
-    private ReportService reportService = new ReportService();
+    private final AppointmentService appointmentService = new AppointmentService();
+    private final PatientService patientService = new PatientService();
+    private final ReportService reportService = new ReportService();
 
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {

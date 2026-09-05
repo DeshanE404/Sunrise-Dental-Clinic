@@ -1,7 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
 <%@ page import="com.sunrise.model.User" %>
 <%@ page import="com.sunrise.model.Appointment" %>
 <%@ page import="com.sunrise.model.Bill" %>
+<%@ page import="com.sunrise.model.Treatment" %>
 <%
     User user = (User) session.getAttribute("user");
     if (user == null) {
@@ -10,6 +12,8 @@
     }
     Appointment appt = (Appointment) request.getAttribute("appointment");
     Bill bill = (Bill) request.getAttribute("bill");
+    List<Treatment> appointmentTreatments = (List<Treatment>) request.getAttribute("appointmentTreatments");
+    double lineTotal = 0.0;
 %>
 <!DOCTYPE html>
 <html>
@@ -44,15 +48,15 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 p-0 no-print">
+            <div class="sidebar-column col-md-3 col-lg-2 p-0 no-print">
                 <jsp:include page="includes/sidebar.jsp" />
             </div>
             
             <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 p-4">
+            <div class="content-column col-md-9 col-lg-10 p-4">
                 <div class="no-print d-flex justify-content-between align-items-center mb-3">
                     <h2>Calculate and Print Bill</h2>
-                    <a href="view_appointment.jsp" class="btn btn-outline-secondary">Back to Search</a>
+                    <a href="SearchAppointmentServlet" class="btn btn-outline-secondary">Back to Search</a>
                 </div>
                 <hr class="no-print">
                 
@@ -92,24 +96,39 @@
                                 <thead class="table-dark text-center">
                                     <tr>
                                         <th>Description</th>
-                                        <th style="width: 150px;">Unit Price ($)</th>
-                                        <th style="width: 150px;">Total ($)</th>
+                                        <th style="width: 150px;">Unit Price (Rs.)</th>
+                                        <th style="width: 150px;">Total (Rs.)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Consultation & Setup Fee</td>
-                                        <td class="text-end"><%= String.format("%.2f", bill.getConsultationFee()) %></td>
-                                        <td class="text-end fw-semibold"><%= String.format("%.2f", bill.getConsultationFee()) %></td>
+                                        <td>Registration &amp; Administration Fee</td>
+                                        <td class="text-end"><%= String.format("%,.2f", bill.getConsultationFee()) %></td>
+                                        <td class="text-end fw-semibold"><%= String.format("%,.2f", bill.getConsultationFee()) %></td>
                                     </tr>
+                                    <%
+                                        if (appointmentTreatments != null && !appointmentTreatments.isEmpty()) {
+                                            for (Treatment t : appointmentTreatments) {
+                                                lineTotal += t.getCost();
+                                    %>
+                                    <tr>
+                                        <td>Dental Treatment: <%= t.getTreatmentName() %></td>
+                                        <td class="text-end"><%= String.format("%,.2f", t.getCost()) %></td>
+                                        <td class="text-end fw-semibold"><%= String.format("%,.2f", t.getCost()) %></td>
+                                    </tr>
+                                    <%
+                                            }
+                                        } else if (appt != null && appt.getTreatmentName() != null) {
+                                    %>
                                     <tr>
                                         <td>Dental Treatment: <%= appt.getTreatmentName() %></td>
-                                        <td class="text-end"><%= String.format("%.2f", bill.getTreatmentCost()) %></td>
-                                        <td class="text-end fw-semibold"><%= String.format("%.2f", bill.getTreatmentCost()) %></td>
+                                        <td class="text-end"><%= String.format("%,.2f", bill.getTreatmentCost()) %></td>
+                                        <td class="text-end fw-semibold"><%= String.format("%,.2f", bill.getTreatmentCost()) %></td>
                                     </tr>
+                                    <% } %>
                                     <tr class="table-active">
-                                        <td colspan="2" class="text-end"><strong>Total Treatment Cost:</strong></td>
-                                        <td class="text-end text-primary fs-5 fw-bold">$<%= String.format("%.2f", bill.getTotalBill()) %></td>
+                                        <td colspan="2" class="text-end"><strong>Total Bill:</strong></td>
+                                        <td class="text-end text-primary fs-5 fw-bold">Rs. <%= String.format("%,.2f", bill.getTotalBill()) %></td>
                                     </tr>
                                 </tbody>
                             </table>

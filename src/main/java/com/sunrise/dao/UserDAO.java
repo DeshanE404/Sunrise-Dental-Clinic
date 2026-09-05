@@ -7,8 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserDAO {
+    private static final Logger LOGGER = Logger.getLogger(UserDAO.class.getName());
 
     public User getUserByEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
@@ -17,11 +20,70 @@ public class UserDAO {
 
         String query = "SELECT * FROM users WHERE LOWER(email) = LOWER(?)";
 
-        try (Connection connection = DatabaseConnection.getConnection();
+        Connection connection = DatabaseConnection.getConnection();
+        if (connection == null) {
+            return null;
+        }
+
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
             preparedStatement.setString(1, email.trim());
 
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setId(rs.getInt("id"));
+                    user.setName(rs.getString("name"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPasswordHash(rs.getString("password_hash"));
+                    user.setEmployeeNumber(rs.getString("employee_number"));
+                    user.setPhoneNumber(rs.getString("phone_number"));
+                    user.setRole(rs.getString("role"));
+                    return user;
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Unable to query user by email", e);
+        }
+        return null;
+    }
+
+    public boolean createUser(User user) {
+        String query = "INSERT INTO users (name, email, password_hash, employee_number, phone_number, role) VALUES (?, ?, ?, ?, ?, ?)";
+        Connection connection = DatabaseConnection.getConnection();
+        if (connection == null) {
+            return false;
+        }
+
+        try (connection;
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            
+            preparedStatement.setString(1, user.getName());
+            preparedStatement.setString(2, user.getEmail());
+            preparedStatement.setString(3, user.getPasswordHash());
+            preparedStatement.setString(4, user.getEmployeeNumber());
+            preparedStatement.setString(5, user.getPhoneNumber());
+            preparedStatement.setString(6, user.getRole());
+            
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public User getUserById(int userId) {
+        String query = "SELECT id, name, email, password_hash, employee_number, phone_number, role FROM users WHERE id = ?";
+        Connection connection = DatabaseConnection.getConnection();
+        if (connection == null) {
+            return null;
+        }
+
+        try (connection;
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, userId);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
                     User user = new User();
@@ -41,18 +103,17 @@ public class UserDAO {
         return null;
     }
 
-    public boolean createUser(User user) {
-        String query = "INSERT INTO users (name, email, password_hash, employee_number, phone_number, role) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection connection = DatabaseConnection.getConnection();
+    public boolean deleteUser(int userId) {
+        String query = "DELETE FROM users WHERE id = ?";
+        Connection connection = DatabaseConnection.getConnection();
+        if (connection == null) {
+            return false;
+        }
+
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            
-            preparedStatement.setString(1, user.getName());
-            preparedStatement.setString(2, user.getEmail());
-            preparedStatement.setString(3, user.getPasswordHash());
-            preparedStatement.setString(4, user.getEmployeeNumber());
-            preparedStatement.setString(5, user.getPhoneNumber());
-            preparedStatement.setString(6, user.getRole());
-            
+
+            preparedStatement.setInt(1, userId);
             return preparedStatement.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -62,7 +123,12 @@ public class UserDAO {
 
     public int getAdminCount() {
         String query = "SELECT COUNT(*) AS count FROM users WHERE role = 'ADMIN'";
-        try (Connection connection = DatabaseConnection.getConnection();
+        Connection connection = DatabaseConnection.getConnection();
+        if (connection == null) {
+            return -1;
+        }
+
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(query);
              ResultSet rs = preparedStatement.executeQuery()) {
             

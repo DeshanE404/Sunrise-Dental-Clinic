@@ -1,5 +1,5 @@
 -- schema.sql
--- Create database manually in PostgreSQL: CREATE DATABASE sunrise_dental;
+-- Create database manually in PostgreSQL: CREATE DATABASE sunrise_dentall;
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS bills (
     billing_date TIMESTAMP NOT NULL
 );
 
+-- Appointment audit trail (records every insert/update/cancel/delete via trigger).
 CREATE TABLE IF NOT EXISTS appointment_audit (
     audit_id SERIAL PRIMARY KEY,
     appointment_no VARCHAR(30) NOT NULL,
@@ -63,6 +64,37 @@ CREATE TABLE IF NOT EXISTS appointment_audit (
     changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     note TEXT
 );
+
+-- A single appointment can now have MULTIPLE treatments. This join table
+-- stores every treatment registered for an appointment. The old
+-- appointments.treatment_id column is kept as the "primary" treatment for
+-- backward compatibility with the REST API and existing reports.
+CREATE TABLE IF NOT EXISTS appointment_treatments (
+    appointment_no VARCHAR(30) NOT NULL REFERENCES appointments(appointment_no) ON DELETE CASCADE,
+    treatment_id INT NOT NULL REFERENCES treatments(treatment_id) ON DELETE CASCADE,
+    PRIMARY KEY (appointment_no, treatment_id)
+);
+
+-- Populate the join table from existing appointments that were created while
+-- the system only supported a single treatment per appointment.
+INSERT INTO appointment_treatments (appointment_no, treatment_id)
+SELECT a.appointment_no, a.treatment_id
+FROM appointments a
+WHERE a.treatment_id IS NOT NULL
+ON CONFLICT DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS idx_appointment_treatments_appointment
+    ON appointment_treatments (appointment_no);
+
+-- Upgrade existing databases created before appointment status tracking was added.
+ALTER TABLE appointments
+    ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED';
+
+ALTER TABLE appointments
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE appointments
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_appointments_dentist_datetime
     ON appointments (dentist_name, appointment_date);
@@ -132,10 +164,141 @@ INSERT INTO dentists (dentist_name, specialization) VALUES
 ('Dr. Fernando', 'Cosmetic Dentistry')
 ON CONFLICT (dentist_name) DO NOTHING;
 
--- Insert default treatments
+-- =====================================================================
+-- TREATMENTS - Sunrise Dental Clinic price list (LKR / Rs.)
+-- Each price is a representative figure from the clinic's published
+-- treatment price range (minimum + maximum divided by two).
+-- =====================================================================
+
+-- Make sure legacy default rows ('Cleaning', 'Whitening', 'Filling',
+-- 'Root Canal') are merged into the new standard list without breaking
+-- any existing appointments that reference them.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'cleaning') THEN
+        IF NOT EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'teeth cleaning / scaling') THEN
+            UPDATE treatments SET treatment_name = 'Teeth Cleaning / Scaling' WHERE LOWER(TRIM(treatment_name)) = 'cleaning';
+        ELSE
+            DELETE FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'cleaning'
+                AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = treatments.treatment_id);
+        END IF;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'whitening') THEN
+        IF NOT EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'teeth whitening') THEN
+            UPDATE treatments SET treatment_name = 'Teeth Whitening' WHERE LOWER(TRIM(treatment_name)) = 'whitening';
+        ELSE
+            DELETE FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'whitening'
+                AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = treatments.treatment_id);
+        END IF;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'filling') THEN
+        IF NOT EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'tooth-colored filling') THEN
+            UPDATE treatments SET treatment_name = 'Tooth-Colored Filling' WHERE LOWER(TRIM(treatment_name)) = 'filling';
+        ELSE
+            DELETE FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'filling'
+                AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = treatments.treatment_id);
+        END IF;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'root canal') THEN
+        IF NOT EXISTS (SELECT 1 FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'root canal treatment - molar') THEN
+            UPDATE treatments SET treatment_name = 'Root Canal Treatment - Molar' WHERE LOWER(TRIM(treatment_name)) = 'root canal';
+        ELSE
+            DELETE FROM treatments WHERE LOWER(TRIM(treatment_name)) = 'root canal'
+                AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = treatments.treatment_id);
+        END IF;
+    END IF;
+END $$;
+
+-- Remove any exact duplicates that may have been created by earlier schema runs.
+DELETE FROM treatments a USING treatments b
+WHERE a.treatment_id > b.treatment_id
+  AND LOWER(TRIM(a.treatment_name)) = LOWER(TRIM(b.treatment_name));
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_treatments_treatment_name') THEN
+        ALTER TABLE treatments ADD CONSTRAINT uq_treatments_treatment_name UNIQUE (treatment_name);
+    END IF;
+END $$;
+
+-- Insert / refresh the complete treatment price list.
 INSERT INTO treatments (treatment_name, cost) VALUES
-('Cleaning', 100.00),
-('Whitening', 150.00),
-('Filling', 200.00),
-('Root Canal', 500.00)
-ON CONFLICT DO NOTHING;
+('Dental Consultation', 1500),
+('Dental X-Ray (per image)', 1750),
+('Full Mouth X-Ray', 4000),
+('Teeth Cleaning / Scaling', 4500),
+('Deep Cleaning', 8500),
+('Tooth-Colored Filling', 5000),
+('Temporary Filling', 2250),
+('Dental Sealant', 3000),
+('Fluoride Treatment', 3000),
+('Root Canal Treatment - Front Tooth', 20000),
+('Root Canal Treatment - Premolar', 25000),
+('Root Canal Treatment - Molar', 32500),
+('Tooth Extraction', 5500),
+('Surgical Tooth Extraction', 14000),
+('Wisdom Tooth Extraction', 17500),
+('Metal Dental Crown', 20000),
+('Porcelain Crown', 32500),
+('Zirconia Crown', 45000),
+('Dental Bridge', 45000),
+('Complete Denture', 60000),
+('Partial Denture', 42500),
+('Flexible Denture', 52500),
+('Dental Implant', 150000),
+('Implant Crown', 75000),
+('Teeth Whitening', 32500),
+('Composite Veneer', 15000),
+('Porcelain Veneer', 45000),
+('Braces - Metal', 140000),
+('Braces - Ceramic', 200000),
+('Retainer', 17500),
+('Children''s Dental Checkup', 1500),
+('Children''s Filling', 3750),
+('Children''s Tooth Extraction', 3500),
+('Emergency Dental Treatment', 6500)
+ON CONFLICT (treatment_name) DO UPDATE SET cost = EXCLUDED.cost;
+
+-- Drop any leftover treatments that are not part of the official list and are
+-- not referenced by any existing appointment.
+DELETE FROM treatments t
+WHERE t.treatment_name NOT IN (
+    'Dental Consultation',
+    'Dental X-Ray (per image)',
+    'Full Mouth X-Ray',
+    'Teeth Cleaning / Scaling',
+    'Deep Cleaning',
+    'Tooth-Colored Filling',
+    'Temporary Filling',
+    'Dental Sealant',
+    'Fluoride Treatment',
+    'Root Canal Treatment - Front Tooth',
+    'Root Canal Treatment - Premolar',
+    'Root Canal Treatment - Molar',
+    'Tooth Extraction',
+    'Surgical Tooth Extraction',
+    'Wisdom Tooth Extraction',
+    'Metal Dental Crown',
+    'Porcelain Crown',
+    'Zirconia Crown',
+    'Dental Bridge',
+    'Complete Denture',
+    'Partial Denture',
+    'Flexible Denture',
+    'Dental Implant',
+    'Implant Crown',
+    'Teeth Whitening',
+    'Composite Veneer',
+    'Porcelain Veneer',
+    'Braces - Metal',
+    'Braces - Ceramic',
+    'Retainer',
+    'Children''s Dental Checkup',
+    'Children''s Filling',
+    'Children''s Tooth Extraction',
+    'Emergency Dental Treatment'
+)
+AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = t.treatment_id);

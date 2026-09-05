@@ -23,11 +23,20 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendAppointmentConfirmation(Appointment appointment, String patientEmail) {
+        if (appointment == null || patientEmail == null || patientEmail.trim().isEmpty()) {
+            LOGGER.warning("Email not sent: missing appointment data.");
+            return false;
+        }
+        if (!isEmailEnabled()) {
+            LOGGER.info("Email notifications are disabled by configuration.");
+            return false;
+        }
+
         return sendEmail(patientEmail, "Appointment Confirmation", buildConfirmationHtml(
                 appointment.getAppointmentNo(),
                 getPatientName(appointment.getPatientId()),
                 appointment.getDentistName(),
-                getTreatmentName(appointment.getTreatmentId()),
+                getAppointmentTreatmentLabel(appointment),
                 formatDate(appointment.getAppointmentDate()),
                 formatTime(appointment.getAppointmentDate())
         ));
@@ -35,11 +44,20 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendAppointmentUpdated(Appointment appointment, String patientEmail) {
+        if (appointment == null || patientEmail == null || patientEmail.trim().isEmpty()) {
+            LOGGER.warning("Email not sent: missing appointment data.");
+            return false;
+        }
+        if (!isEmailEnabled()) {
+            LOGGER.info("Email notifications are disabled by configuration.");
+            return false;
+        }
+
         return sendEmail(patientEmail, "Appointment Updated", buildUpdatedHtml(
                 appointment.getAppointmentNo(),
                 getPatientName(appointment.getPatientId()),
                 appointment.getDentistName(),
-                getTreatmentName(appointment.getTreatmentId()),
+                getAppointmentTreatmentLabel(appointment),
                 formatDate(appointment.getAppointmentDate()),
                 formatTime(appointment.getAppointmentDate()),
                 appointment.getStatus() == null ? "SCHEDULED" : appointment.getStatus()
@@ -48,6 +66,15 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendAppointmentCancelled(Appointment appointment, String patientEmail) {
+        if (appointment == null || patientEmail == null || patientEmail.trim().isEmpty()) {
+            LOGGER.warning("Email not sent: missing appointment data.");
+            return false;
+        }
+        if (!isEmailEnabled()) {
+            LOGGER.info("Email notifications are disabled by configuration.");
+            return false;
+        }
+
         return sendEmail(patientEmail, "Appointment Cancelled", buildCancelledHtml(
                 appointment.getAppointmentNo(),
                 getPatientName(appointment.getPatientId()),
@@ -102,7 +129,7 @@ public class EmailServiceImpl implements EmailService {
             return false;
         }
 
-        if (!"true".equalsIgnoreCase(System.getProperty("EMAIL_ENABLED", System.getenv().getOrDefault("EMAIL_ENABLED", "true")))) {
+        if (!isEmailEnabled()) {
             LOGGER.info("Email notifications are disabled by configuration.");
             return false;
         }
@@ -178,6 +205,10 @@ public class EmailServiceImpl implements EmailService {
         return value.replace("<", "&lt;").replace(">", "&gt;");
     }
 
+    private boolean isEmailEnabled() {
+        return "true".equalsIgnoreCase(System.getProperty("EMAIL_ENABLED", System.getenv().getOrDefault("EMAIL_ENABLED", "true")));
+    }
+
     private String formatDate(Timestamp ts) {
         if (ts == null) {
             return "";
@@ -195,6 +226,16 @@ public class EmailServiceImpl implements EmailService {
     private String getPatientName(int patientId) {
         Patient patient = patientDAO.getPatientById(patientId);
         return patient != null ? patient.getName() : "Patient";
+    }
+
+    private String getAppointmentTreatmentLabel(Appointment appointment) {
+        if (appointment != null && appointment.getTreatmentName() != null && !appointment.getTreatmentName().trim().isEmpty()) {
+            return appointment.getTreatmentName();
+        }
+        if (appointment != null) {
+            return getTreatmentName(appointment.getTreatmentId());
+        }
+        return "Treatment";
     }
 
     private String getTreatmentName(int treatmentId) {

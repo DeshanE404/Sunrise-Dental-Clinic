@@ -29,11 +29,12 @@ public class SearchAppointmentServlet extends HttpServlet {
 
         if (appt != null) {
             request.setAttribute("appointment", appt);
+            request.setAttribute("appointmentTreatments", appointmentService.getAppointmentTreatments(appt.getAppointmentNo()));
             List<Appointment> appointments = appointmentService.getAllAppointments();
             request.setAttribute("appointments", appointments);
             request.getRequestDispatcher("view_appointment.jsp").forward(request, response);
         } else {
-            response.sendRedirect("view_appointment.jsp?error=notfound");
+            response.sendRedirect("SearchAppointmentServlet?error=notfound");
         }
     }
 }
