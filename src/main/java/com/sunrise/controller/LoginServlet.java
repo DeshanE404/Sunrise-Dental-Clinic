@@ -44,7 +44,7 @@ public class LoginServlet extends HttpServlet {
         if (user != null) {
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-            session.setMaxInactiveInterval(15 * 60);
+            session.setMaxInactiveInterval(60 * 60);
 
             Cookie rememberCookie = new Cookie("remember_user", email.trim());
             rememberCookie.setPath("/");
