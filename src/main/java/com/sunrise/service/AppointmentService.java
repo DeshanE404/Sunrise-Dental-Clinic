@@ -3,14 +3,23 @@ package com.sunrise.service;
 import com.sunrise.dao.AppointmentDAO;
 import com.sunrise.dao.TreatmentDAO;
 import com.sunrise.model.Appointment;
+import com.sunrise.model.Treatment;
+import com.sunrise.service.EmailService;
+import com.sunrise.service.EmailServiceImpl;
 import java.sql.Timestamp;
+import java.time.Year;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class AppointmentService {
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
     private final TreatmentDAO treatmentDAO = new TreatmentDAO();
     private final EmailService emailService = new EmailServiceImpl();
+
+    public String getNextAppointmentNumber() {
+        return appointmentDAO.getNextAppointmentNumber(Year.now().getValue());
+    }
 
     public boolean createAppointment(Appointment appt) {
         String validationError = validateAppointment(appt);
@@ -84,9 +93,23 @@ public class AppointmentService {
             return "Dentist name is required";
         }
 
-        if (appt.getTreatmentId() <= 0 || treatmentDAO.getTreatmentById(appt.getTreatmentId()) == null) {
-            return "Treatment not found";
+        // Validate the treatment selection. An appointment may contain one or
+        // more treatments. If the list is empty we fall back to the legacy
+        // single treatmentId so the REST API keeps working unchanged.
+        List<Integer> treatmentIds = appt.getTreatmentIds();
+        if (treatmentIds == null || treatmentIds.isEmpty()) {
+            if (appt.getTreatmentId() <= 0) {
+                return "At least one treatment must be selected";
+            }
+            treatmentIds = Collections.singletonList(appt.getTreatmentId());
         }
+        for (Integer id : treatmentIds) {
+            if (id == null || id <= 0 || treatmentDAO.getTreatmentById(id) == null) {
+                return "Treatment not found";
+            }
+        }
+        appt.setTreatmentIds(new java.util.ArrayList<>(treatmentIds));
+        appt.setTreatmentId(treatmentIds.get(0));
 
         if (appt.getAppointmentDate() == null) {
             return "Appointment date is required";
@@ -112,6 +135,13 @@ public class AppointmentService {
             return null;
         }
         return appointmentDAO.getAppointmentByNo(appointmentNo.trim());
+    }
+
+    public List<Treatment> getAppointmentTreatments(String appointmentNo) {
+        if (appointmentNo == null || appointmentNo.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return appointmentDAO.getTreatmentsForAppointment(appointmentNo.trim());
     }
 
     public List<Appointment> getAllAppointments() {

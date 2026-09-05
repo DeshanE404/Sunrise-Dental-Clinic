@@ -6,13 +6,14 @@ import com.sunrise.model.Appointment;
 import com.sunrise.model.Bill;
 import com.sunrise.model.Treatment;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class BillingService {
     private final BillDAO billDAO = new BillDAO();
     private final TreatmentDAO treatmentDAO = new TreatmentDAO();
     private final AppointmentService appointmentService = new AppointmentService();
 
-    private static final double CONSULTATION_FEE = 50.0;
+    private static final double CONSULTATION_FEE = 500.0; // LKR registration & administration fee
 
     public Bill generateAndSaveBill(String appointmentNo, int treatmentId) {
         if (appointmentNo == null || appointmentNo.trim().isEmpty()) {
@@ -29,9 +30,21 @@ public class BillingService {
             return null;
         }
 
-        int appointmentTreatmentId = appointment.getTreatmentId() > 0 ? appointment.getTreatmentId() : treatmentId;
-        Treatment treatment = treatmentDAO.getTreatmentById(appointmentTreatmentId);
-        if (treatment == null) {
+        // Collect every treatment registered on the appointment. When the
+        // appointment_treatments table is empty (legacy record) fall back to the
+        // single treatment id supplied by the caller.
+        List<Treatment> treatments = appointmentService.getAppointmentTreatments(cleanAppointmentNo);
+        if (treatments == null || treatments.isEmpty()) {
+            treatments = new java.util.ArrayList<>();
+            int fallbackId = appointment.getTreatmentId() > 0 ? appointment.getTreatmentId() : treatmentId;
+            if (fallbackId > 0) {
+                Treatment fallback = treatmentDAO.getTreatmentById(fallbackId);
+                if (fallback != null) {
+                    treatments.add(fallback);
+                }
+            }
+        }
+        if (treatments.isEmpty()) {
             return null;
         }
 
@@ -40,13 +53,17 @@ public class BillingService {
             return existing;
         }
 
-        double treatmentCost = treatment.getCost();
+        double treatmentCost = 0.0;
+        for (Treatment treatment : treatments) {
+            treatmentCost += treatment.getCost();
+        }
+        double total = CONSULTATION_FEE + treatmentCost;
 
         Bill bill = new Bill();
         bill.setAppointmentNo(cleanAppointmentNo);
         bill.setConsultationFee(CONSULTATION_FEE);
         bill.setTreatmentCost(treatmentCost);
-        bill.setTotalBill(0.0);
+        bill.setTotalBill(total);
         bill.setBillingDate(new Timestamp(System.currentTimeMillis()));
 
         boolean success = billDAO.generateBill(bill);

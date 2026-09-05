@@ -1,6 +1,7 @@
 package com.sunrise.controller;
 
 import com.sunrise.model.User;
+import com.sunrise.dao.DatabaseConnection;
 import com.sunrise.service.UserService;
 import java.io.IOException;
 import java.util.List;
@@ -34,6 +35,14 @@ public class UserManagementServlet extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+
+        // Delete an existing user (ADMIN or RECEPTION). Only admins may do this.
+        if ("delete".equals(action)) {
+            deleteUser(request, response);
+            return;
+        }
+
         String name = request.getParameter("name");
         String email = request.getParameter("email");
         String passwordRaw = request.getParameter("password");
@@ -50,6 +59,12 @@ public class UserManagementServlet extends HttpServlet {
         // Get current user from session (will be null for Postman without session)
         HttpSession session = request.getSession(false);
         User currentUser = (session != null) ? (User) session.getAttribute("user") : null;
+
+        if (userService.getAdminCount() < 0) {
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+                "Cannot connect to PostgreSQL: " + DatabaseConnection.getLastFailure());
+            return;
+        }
 
         boolean success = userService.registerUser(name.trim(), email.trim(), passwordRaw, employeeNumber.trim(), phoneNumber.trim(), role.trim(), currentUser);
 
@@ -71,6 +86,46 @@ public class UserManagementServlet extends HttpServlet {
                 // If requested from Postman
                 response.getWriter().write("Unauthorized or failed to create user. Ensure email and employee number are unique.");
             }
+        }
+    }
+
+    private void deleteUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false);
+        User currentUser = (session != null) ? (User) session.getAttribute("user") : null;
+
+        if (currentUser == null || !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            response.sendRedirect("DashboardServlet?error=unauthorized");
+            return;
+        }
+
+        String userIdParam = request.getParameter("userId");
+        if (userIdParam == null || userIdParam.trim().isEmpty()) {
+            response.sendRedirect("UserManagementServlet?error=delete_failed");
+            return;
+        }
+
+        try {
+            int userId = Integer.parseInt(userIdParam.trim());
+            int result = userService.removeUser(userId, currentUser);
+            switch (result) {
+                case 0:
+                    response.sendRedirect("UserManagementServlet?success=deleted");
+                    break;
+                case 1:
+                    response.sendRedirect("UserManagementServlet?error=user_not_found");
+                    break;
+                case 3:
+                    response.sendRedirect("UserManagementServlet?error=self_blocked");
+                    break;
+                case 4:
+                    response.sendRedirect("UserManagementServlet?error=last_admin_blocked");
+                    break;
+                default:
+                    response.sendRedirect("UserManagementServlet?error=delete_failed");
+                    break;
+            }
+        } catch (NumberFormatException e) {
+            response.sendRedirect("UserManagementServlet?error=delete_failed");
         }
     }
 }
