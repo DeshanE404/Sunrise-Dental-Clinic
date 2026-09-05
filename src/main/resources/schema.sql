@@ -11,6 +11,20 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20) NOT NULL -- 'ADMIN' or 'RECEPTION'
 );
 
+-- Persistent "remember me" login tokens (keeps users logged in across server restarts).
+-- Only a SHA-256 hash of the cookie token is stored.
+CREATE TABLE IF NOT EXISTS remember_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_remember_tokens_token_hash
+    ON remember_tokens (token_hash);
+
+
 CREATE TABLE IF NOT EXISTS patients (
     patient_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,

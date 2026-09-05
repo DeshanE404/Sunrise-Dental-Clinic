@@ -112,6 +112,19 @@ public final class SchemaInitializer {
             + ")\n"
             + "AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.treatment_id = t.treatment_id);";
 
+
+    private static final String CREATE_REMEMBER_TOKENS =
+            "CREATE TABLE IF NOT EXISTS remember_tokens (\n"
+            + "    id SERIAL PRIMARY KEY,\n"
+            + "    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n"
+            + "    token_hash VARCHAR(64) NOT NULL UNIQUE,\n"
+            + "    expires_at TIMESTAMP NOT NULL,\n"
+            + "    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n"
+            + ");";
+
+    private static final String CREATE_REMEMBER_TOKENS_INDEX =
+            "CREATE INDEX IF NOT EXISTS idx_remember_tokens_token_hash ON remember_tokens (token_hash);";
+
     private SchemaInitializer() {
     }
 
@@ -125,6 +138,8 @@ public final class SchemaInitializer {
             }
             try {
                 run(connection, CREATE_JUNCTION);
+                run(connection, CREATE_REMEMBER_TOKENS);
+                run(connection, CREATE_REMEMBER_TOKENS_INDEX);
                 run(connection, BACKFILL_JUNCTION);
                 run(connection, RENAME_CLEANING);
                 run(connection, RENAME_WHITENING);
