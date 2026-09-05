@@ -6,6 +6,19 @@ import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Runs idempotent schema upgrades automatically the first time the application
+ * opens a database connection. This guarantees that an existing database that
+ * was created before the multi-treatment feature still gets:
+ *
+ *  1. the appointment_treatments join table (and existing rows back-filled),
+ *  2. a unique treatment name constraint,
+ *  3. the complete Sunrise Dental treatment price list (LKR),
+ *  4. old default treatments (Cleaning/Whitening/Filling/Root Canal) merged
+ *     into the new standard names without losing appointment references.
+ *
+ * All statements are safe to run repeatedly.
+ */
 public final class SchemaInitializer {
     private static final Logger LOGGER = Logger.getLogger(SchemaInitializer.class.getName());
     private static volatile boolean initialized = false;
@@ -126,6 +139,7 @@ public final class SchemaInitializer {
             "CREATE INDEX IF NOT EXISTS idx_remember_tokens_token_hash ON remember_tokens (token_hash);";
 
     private SchemaInitializer() {
+        // Utility class.
     }
 
     public static void ensureSchema(Connection connection) {
@@ -163,3 +177,4 @@ public final class SchemaInitializer {
         }
     }
 }
+

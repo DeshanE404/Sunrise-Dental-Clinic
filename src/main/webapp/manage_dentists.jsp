@@ -100,6 +100,7 @@
                                             <th>Specialization</th>
                                             <th class="text-center">Remove</th>
                                         </tr>
+                                    </thead>
                                     <tbody>
                                         <%
                                             List<Dentist> dentistList = (List<Dentist>) request.getAttribute("dentists");
@@ -153,4 +154,3 @@
 </body>
 </html>
 
-                                    </thead>
